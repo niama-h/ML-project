@@ -39,3 +39,8 @@ negative_counts = numeric_df.apply(lambda x: (x < 0).sum())
 # Display the result
 print(negative_counts)
 
+exclude_column = ['credit_risk_score','device_os','source','housing_status','employment_status','payment_type']
+
+for col in df.columns:
+    if col not in df:
+        df[col] = df[col].apply(lambda x: x if x >= 0 else np.nan)
