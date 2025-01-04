@@ -31,14 +31,6 @@ df.shape
 df.describe()
 ###########################################
 
-numeric_df = df.select_dtypes(include=['number'])
-
-# Count the number of negative values in each numeric column
-negative_counts = numeric_df.apply(lambda x: (x < 0).sum())
-
-# Display the result
-print(negative_counts)
-
 exclude_column = ['credit_risk_score','device_os','source','housing_status','employment_status','payment_type']
 
 for col in df.columns:
