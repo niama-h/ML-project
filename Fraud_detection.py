@@ -34,5 +34,5 @@ df.describe()
 exclude_column = ['credit_risk_score','device_os','source','housing_status','employment_status','payment_type']
 
 for col in df.columns:
-    if col not in df:
+    if col not in exclude_column:
         df[col] = df[col].apply(lambda x: x if x >= 0 else np.nan)
