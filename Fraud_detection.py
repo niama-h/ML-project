@@ -36,3 +36,6 @@ exclude_column = ['credit_risk_score','device_os','source','housing_status','emp
 for col in df.columns:
     if col not in exclude_column:
         df[col] = df[col].apply(lambda x: x if x >= 0 else np.nan)
+        
+df.drop(columns=['prev_address_months_count','intended_balcon_amount'], inplace=True)
+
