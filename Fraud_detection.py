@@ -49,3 +49,10 @@ plt.show()
 
 df.drop(columns=['prev_address_months_count','intended_balcon_amount'], inplace=True)
 
+df = df[~((df['session_length_in_minutes'].isna()) & (df['fraud_bool'] == 0))]
+df = df[~((df['bank_months_count'].isna()) & (df['fraud_bool'] == 0))]
+df = df[~((df['velocity_6h'].isna()) & (df['fraud_bool'] == 0))]
+df= df[~((df['device_distinct_emails_8w'].isna()) & (df['fraud_bool'] == 0))]
+count=((df['bank_months_count'].isna()) & (df['fraud_bool'] == 1)).sum()
+print(count) ##toutes les valeurs nulles correspond a une fraude !!!!!!
+
