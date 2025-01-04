@@ -40,8 +40,6 @@ for col in df.columns:
 df.isnull().sum()       
 df = df[~((df['bank_months_count'].isna()) & (df['fraud_bool'] == 0))]
 
-df.drop(columns=['prev_address_months_count','intended_balcon_amount'], inplace=True)
-
 numeric_df = df.select_dtypes(include=['number'])
 correlation_matrix = numeric_df.corr()
 plt.figure(figsize=(16, 13))  # Adjust the size of the plot
