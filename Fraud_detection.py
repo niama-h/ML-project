@@ -87,9 +87,24 @@ X_processed = np.hstack((X_categorical_encoded, X_numerical))
 
 X_processed = np.nan_to_num(X_processed, nan=-1)
 
+from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import accuracy_score, classification_report
+import numpy as np
+
 # Convert to numpy arrays (if not already)
 X = np.array(X_processed)  # Full feature set
-y = np.array(y)  # Labels
+y = np.array(y)
+
+
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X, y)
+
+X = np.array(X_resampled)  # Full feature set
+y = np.array(y_resampled)
 
 # Stratified initial train-test split
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.3, random_state=42)
@@ -136,4 +151,119 @@ y_pred = np.argmax(final_log_probs, axis=1)
 # Evaluation
 print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
 print(classification_report(y_test, y_pred))
+
 ### NAIVE BAYES ######################
+### MLP ###############################
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.metrics import accuracy_score, classification_report
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+from imblearn.over_sampling import SMOTE
+
+# Load and preprocess the dataset
+dfm = df
+# Convert specific columns to categorical
+dfm['email_is_free'] = dfm['email_is_free'].astype('category')
+dfm['phone_home_valid'] = dfm['phone_home_valid'].astype('category')
+dfm['phone_mobile_valid'] = dfm['phone_mobile_valid'].astype('category')
+dfm['has_other_cards'] = dfm['has_other_cards'].astype('category')
+dfm['foreign_request'] = dfm['foreign_request'].astype('category')
+dfm['keep_alive_session'] = dfm['keep_alive_session'].astype('category')
+
+# Drop unnecessary column
+dfm.drop(columns=['device_fraud_count'], inplace=True)
+
+# Separate target variable and features
+y = dfm['fraud_bool']
+ds = dfm.drop(columns=['fraud_bool'])
+
+# Separate categorical and numerical columns
+categorical_columns = ds.select_dtypes(include=['object', 'category']).columns
+numerical_columns = ds.select_dtypes(include=['number']).columns
+
+# Encode categorical data (One-hot encoding)
+encoder = OneHotEncoder(sparse_output=False)
+X_categorical_encoded = encoder.fit_transform(dfm[categorical_columns])
+
+# Combine encoded categorical and numerical data
+X_processed = np.hstack((X_categorical_encoded, ds[numerical_columns]))
+X_processed = np.nan_to_num(X_processed, nan=-1)
+
+# Convert to numpy arrays
+X = np.array(X_processed)  # Full feature set
+y = np.array(y)  # Labels
+
+# Handle class imbalance using SMOTE
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X, y)
+
+X = np.array(X_resampled)
+y = np.array(y_resampled)
+
+# Stratified train/test split
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+train_index, test_index = next(sss.split(X, y))
+
+X_train, X_test = X[train_index], X[test_index]
+y_train, y_test = y[train_index], y[test_index]
+
+# Normalize numerical features
+scaler = MinMaxScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Define a function to create the Keras model
+def create_model(activation='tanh', optimizer='adam', learning_rate=0.01):
+    model = Sequential()
+    model.add(Dense(10, activation=activation, input_dim=X_train_scaled.shape[1]))  # First hidden layer
+    model.add(Dense(20, activation=activation))  # Second hidden layer
+    model.add(Dense(1, activation='sigmoid'))  # Output layer (binary classification)
+    
+    # Instantiate the optimizer
+    optimizers = {'adam': Adam}
+    if optimizer not in optimizers:
+        raise ValueError(f"Unsupported optimizer: {optimizer}")
+    opt = optimizers[optimizer](learning_rate=learning_rate)
+    
+    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+    return model
+
+# Wrap the Keras model for GridSearchCV
+model = KerasClassifier(build_fn=create_model, verbose=0)
+
+# Define the hyperparameter grid
+param_grid = {
+    'activation': ['relu', 'tanh'],               # Activation functions
+    'optimizer': ['adam'],                        # Optimizer
+    'learning_rate': [0.001, 0.01],          # Learning rates
+    'batch_size': [32],                       # Batch sizes
+    'epochs': [10, 20]                            # Epochs
+}
+
+# Instantiate the GridSearchCV object
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3, scoring='accuracy', verbose=1)
+
+# Perform grid search
+grid_result = grid.fit(X_train_scaled, y_train)
+
+# Print best parameters and score
+print(f"Best Parameters: {grid_result.best_params_}")
+print(f"Best Score: {grid_result.best_score_:.2f}")
+
+# Evaluate on the test set with the best model
+best_model = grid_result.best_estimator_
+y_pred = (best_model.predict(X_test_scaled) > 0.5).astype(int)
+
+print("\nFinal Test Set Performance:")
+print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+###MLP#################################################
+
+
+
