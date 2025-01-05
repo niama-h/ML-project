@@ -92,7 +92,7 @@ X = np.array(X_processed)  # Full feature set
 y = np.array(y)  # Labels
 
 # Stratified initial train-test split
-sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.3, random_state=42)
 train_index, test_index = next(sss.split(X, y))
 
 X_train, X_test = X[train_index], X[test_index]
