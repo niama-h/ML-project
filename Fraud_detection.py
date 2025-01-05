@@ -59,33 +59,33 @@ print(count) ##toutes les valeurs nulles correspond a une fraude !!!!!!
 
 
 ### NAIVE BAYES ######################
-dfb = df
-dfb['fraud_bool'] = dfb['fraud_bool'].astype('category')
+dfb = pd.read_csv('/content/BBASE.csv')
 dfb['email_is_free'] = dfb['email_is_free'].astype('category')
 dfb['phone_home_valid'] = dfb['phone_home_valid'].astype('category')
 dfb['phone_mobile_valid'] = dfb['phone_mobile_valid'].astype('category')
 dfb['has_other_cards'] = dfb['has_other_cards'].astype('category')
 dfb['foreign_request'] = dfb['foreign_request'].astype('category')
 dfb['keep_alive_session'] = dfb['keep_alive_session'].astype('category')
-
-categorical_columns = dfb.select_dtypes(include=['object', 'category']).columns
-numerical_columns = dfb.select_dtypes(include=['number']).columns
 dfb.drop(columns=['device_fraud_count'], inplace=True)
-numerical_columns = dfb.select_dtypes(include=['number']).columns
+y = dfb['fraud_bool']
+ds=dfb
+ds.drop(columns=['fraud_bool'],inplace=True)
+categorical_columns = dfb.select_dtypes(include=['object', 'category']).columns
+numerical_columns = ds.select_dtypes(include=['number']).columns
 
 # Separate the data
 X_categorical = dfb[categorical_columns]
 X_numerical = dfb[numerical_columns]
 
 # Encode categorical data (One-hot encoding)
+from sklearn.preprocessing import OneHotEncoder
 encoder = OneHotEncoder(sparse_output=False)
 X_categorical_encoded = encoder.fit_transform(X_categorical)
 
 # Combine encoded categorical and numerical data
 X_processed = np.hstack((X_categorical_encoded, X_numerical))
 
-y = dfb['fraud_bool']
-X_processed = np.nan_to_num(X_processed, nan=0)
+X_processed = np.nan_to_num(X_processed, nan=-1)
 
 # Convert to numpy arrays (if not already)
 X = np.array(X_processed)  # Full feature set
