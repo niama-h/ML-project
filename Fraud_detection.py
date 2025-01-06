@@ -251,7 +251,7 @@ param_grid = {
 }
 
 # Perform GridSearchCV
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3)
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3,scoring='recall_macro')
 grid_result = grid.fit(X_train_scaled, y_train)
 
 # Print best parameters and accuracy
