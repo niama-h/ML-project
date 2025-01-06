@@ -130,12 +130,16 @@ param_grid_mnb = {'alpha': [0.1, 0.5, 1.0, 2.0], 'fit_prior': [True, False]}
 gnb = GaussianNB()
 grid_search_gnb = GridSearchCV(gnb, param_grid_gnb, cv=5, scoring='recall_macro')
 grid_search_gnb.fit(X_numerical_train_scaled, y_train)
-
+grid_result=grid_search_gnb.fit(X_categorical_train, y_train)
+print(f"Best Parameters: {grid_result.best_params_}")
+print(f"Best Score: {grid_result.best_score_:.2f}")
 # Grid search for MultinomialNB
 mnb = MultinomialNB()
 grid_search_mnb = GridSearchCV(mnb, param_grid_mnb, cv=5, scoring='recall_macro')
 grid_search_mnb.fit(X_categorical_train, y_train)
-
+grid_result=grid_search_mnb.fit(X_categorical_train, y_train)
+print(f"Best Parameters: {grid_result.best_params_}")
+print(f"Best Score: {grid_result.best_score_:.2f}")
 # Best estimators
 best_gnb = grid_search_gnb.best_estimator_
 best_mnb = grid_search_mnb.best_estimator_
