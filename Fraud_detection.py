@@ -86,7 +86,7 @@ X_categorical_encoded = encoder.fit_transform(X_categorical)
 
 X_p = np.hstack((X_categorical_encoded, X_numerical))
 
-X_p= np.nan_to_num(X_processed, nan=-1)
+X_p= np.nan_to_num(X_p, nan=-1)
 
 X = np.array(X_p)  # Full feature set
 y = np.array(y)
@@ -174,7 +174,7 @@ numerical_columns = ds.select_dtypes(include=['number']).columns
 encoder = OneHotEncoder(sparse_output=False)
 X_categorical_encoded = encoder.fit_transform(dfm[categorical_columns])
 X_p1 = np.hstack((X_categorical_encoded, ds[numerical_columns]))
-X_p1 = np.nan_to_num(X_processed, nan=-1)
+X_p1 = np.nan_to_num(X_p1, nan=-1)
 X = np.array(X_p1) 
 y = np.array(y) 
 
