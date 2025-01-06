@@ -462,7 +462,7 @@ plt.show()
 
 
 
-# algo KNN
+####################### algo KNN###########################
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -526,3 +526,46 @@ plt.title("Matrice de Confusion pour KNN")
 plt.xlabel("Prédictions")
 plt.ylabel("Valeurs Réelles")
 plt.show()
+
+
+
+#######################clustering:dbscan########################
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import DBSCAN
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Charger les données
+file_path = r'Base.csv'
+df = pd.read_csv(file_path)
+
+# Sélectionner les colonnes pertinentes
+exclude_column = ['credit_risk_score','device_os','source','housing_status','employment_status','payment_type', 'fraud_bool']
+X = df.drop(columns=exclude_column)
+
+# Normaliser les données
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Appliquer DBSCAN
+dbscan = DBSCAN(eps=0.5, min_samples=5, metric='euclidean')  # Ajustez eps et min_samples si nécessaire
+clusters = dbscan.fit_predict(X_scaled)
+
+# Ajouter les clusters au dataset
+df['Cluster'] = clusters
+
+# Analyser la répartition des clusters
+print(df['Cluster'].value_counts())
+
+# Visualiser les clusters (si vous avez 2 ou 3 dimensions pertinentes)
+if X_scaled.shape[1] >= 2:
+    plt.figure(figsize=(10, 7))
+    sns.scatterplot(x=X_scaled[:, 0], y=X_scaled[:, 1], hue=clusters, palette='viridis', legend='full')
+    plt.title("Visualisation des Clusters (DBSCAN)")
+    plt.xlabel("Feature 1 (normalisée)")
+    plt.ylabel("Feature 2 (normalisée)")
+    plt.show()
+
+
+
