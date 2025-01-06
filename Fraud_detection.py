@@ -46,7 +46,7 @@ df[df['fraud_bool']==1]
 exclude_column = ['credit_risk_score','device_os','source','housing_status','employment_status','payment_type']
 for col in df.columns:
     if col not in exclude_column:
-        df[col] = df[col].apply(lambda x: x if x >= 0 else np.nan)
+        df[col] = df[col].apply(lambda x: x if x >= 0 else np.nan)## on transforme les valeurs negatives (car non significatives) en Nan
 
 df.isnull().sum()       
 df = df[~((df['bank_months_count'].isna()) & (df['fraud_bool'] == 0))]
@@ -58,8 +58,8 @@ sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidt
 plt.title("Correlation Matrix")
 plt.show()
 
-df.drop(columns=['prev_address_months_count','intended_balcon_amount'], inplace=True)
-
+df.drop(columns=['prev_address_months_count','intended_balcon_amount'], inplace=True)## on supprimes les deux colonnes avec 75% de valeurs manquantes
+##on supprime les lignes pour les observations a valeurs manquantes et qui appartiennent a la classe majoritaire pour équilibrer les données
 df = df[~((df['session_length_in_minutes'].isna()) & (df['fraud_bool'] == 0))]
 df = df[~((df['bank_months_count'].isna()) & (df['fraud_bool'] == 0))]
 df = df[~((df['velocity_6h'].isna()) & (df['fraud_bool'] == 0))]
@@ -71,14 +71,17 @@ print(count) ##toutes les valeurs nulles correspond a une fraude !!!!!!
 
 ### NAIVE BAYES ######################
 dfb = df.copy()
+## on transforme les colonnes binaires en type category
 dfb['email_is_free'] = dfb['email_is_free'].astype('category')
 dfb['phone_home_valid'] = dfb['phone_home_valid'].astype('category')
 dfb['phone_mobile_valid'] = dfb['phone_mobile_valid'].astype('category')
 dfb['has_other_cards'] = dfb['has_other_cards'].astype('category')
 dfb['foreign_request'] = dfb['foreign_request'].astype('category')
 dfb['keep_alive_session'] = dfb['keep_alive_session'].astype('category')
+### on donne la valeur output a y
 dfb.drop(columns=['device_fraud_count'], inplace=True)
 y = dfb['fraud_bool']
+## on separe les données en categoriale et numérique
 ds=dfb.copy()
 ds.drop(columns=['fraud_bool'],inplace=True)
 categorical_columns = dfb.select_dtypes(include=['object', 'category']).columns
@@ -99,7 +102,7 @@ X_p= np.nan_to_num(X_p, nan=-1)
 X = np.array(X_p)  # Full feature set
 y = np.array(y)
 
-
+### augmentation des données
 smote = SMOTE(random_state=42)
 X_resampled, y_resampled = smote.fit_resample(X, y)
 
@@ -160,9 +163,8 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 from imblearn.over_sampling import SMOTE
 
-# Load and preprocess the dataset
 dfm = df.copy()
-# Convert specific columns to categorical
+###converstion du type en category
 dfm['email_is_free'] = dfm['email_is_free'].astype('category')
 dfm['phone_home_valid'] = dfm['phone_home_valid'].astype('category')
 dfm['phone_mobile_valid'] = dfm['phone_mobile_valid'].astype('category')
@@ -172,20 +174,23 @@ dfm['keep_alive_session'] = dfm['keep_alive_session'].astype('category')
 
 #toutes les valeurs sont 0
 dfm.drop(columns=['device_fraud_count'], inplace=True)
-
+###output
 y = dfm['fraud_bool']
+
+
+### input
 ds = dfm.drop(columns=['fraud_bool'])
 
 categorical_columns = ds.select_dtypes(include=['object', 'category']).columns
 numerical_columns = ds.select_dtypes(include=['number']).columns
-
+### encoding
 encoder = OneHotEncoder(sparse_output=False)
 X_categorical_encoded = encoder.fit_transform(dfm[categorical_columns])
 X_p1 = np.hstack((X_categorical_encoded, ds[numerical_columns]))
 X_p1 = np.nan_to_num(X_p1, nan=-1)
 X = np.array(X_p1) 
 y = np.array(y) 
-
+### augmentation
 smote = SMOTE(random_state=42)
 X_resampled, y_resampled = smote.fit_resample(X, y)
 
