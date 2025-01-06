@@ -222,10 +222,10 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Define a function to create the Keras model
-def create_model(activation='tanh', optimizer='adam', learning_rate=0.01):
+def create_model(activation='tanh', optimizer='adam', learning_rate=0.01, units=10):
     model = Sequential()
-    model.add(Dense(10, activation=activation, input_dim=X_train_scaled.shape[1]))  # First hidden layer
-    model.add(Dense(20, activation=activation))  # Second hidden layer
+    model.add(Dense(units, activation=activation, input_dim=X_train_scaled.shape[1]))  # First hidden layer
+    model.add(Dense(20, activation=activation))  # Second hidden layer (fixed for simplicity)
     model.add(Dense(1, activation='sigmoid'))  # Output layer (binary classification)
     
     # Instantiate the optimizer
@@ -242,22 +242,22 @@ model = KerasClassifier(build_fn=create_model, verbose=0)
 
 # Define the hyperparameter grid
 param_grid = {
-    'activation': ['relu', 'tanh'],               # Activation functions
-    'optimizer': ['adam'],                        # Optimizer
-    'learning_rate': [0.001, 0.01],          # Learning rates
-    'batch_size': [32],                       # Batch sizes
-    'epochs': [10, 20]                            # Epochs
+    'activation': ['relu', 'tanh'],       # Activation functions
+    'optimizer': ['adam'],                # Optimizer
+    'learning_rate': [0.001, 0.01],       # Learning rates
+    'batch_size': [32],                   # Batch sizes
+    'epochs': [10, 20],                   # Epochs
+    'units': [10, 20]                 # Number of neurons in the first hidden layer
 }
 
-# Instantiate the GridSearchCV object
-grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3, scoring='accuracy', verbose=1)
-
-# Perform grid search
+# Perform GridSearchCV
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3)
 grid_result = grid.fit(X_train_scaled, y_train)
 
-# Print best parameters and score
+# Print best parameters and accuracy
 print(f"Best Parameters: {grid_result.best_params_}")
-print(f"Best Score: {grid_result.best_score_:.2f}")
+print(f"Best Accuracy: {grid_result.best_score_}")
+
 
 # Evaluate on the test set with the best model
 best_model = grid_result.best_estimator_
