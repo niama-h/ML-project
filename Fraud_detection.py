@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+import matplotlib.gridspec as gridspec
 # ML Libraries
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
@@ -22,6 +22,14 @@ from imblearn.over_sampling import SMOTE
 from transformers import pipeline
 from transformers import BertTokenizer
 import re
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import davies_bouldin_score
+
+from scipy.spatial import distance
+from itertools import combinations
 ###########################################
 file_path = r'Base.csv'
 df = pd.read_csv(file_path)
@@ -62,7 +70,7 @@ print(count) ##toutes les valeurs nulles correspond a une fraude !!!!!!
 
 
 ### NAIVE BAYES ######################
-dfb = pd.read_csv('/content/BBASE.csv')
+dfb = df.copy()
 dfb['email_is_free'] = dfb['email_is_free'].astype('category')
 dfb['phone_home_valid'] = dfb['phone_home_valid'].astype('category')
 dfb['phone_mobile_valid'] = dfb['phone_mobile_valid'].astype('category')
@@ -71,7 +79,7 @@ dfb['foreign_request'] = dfb['foreign_request'].astype('category')
 dfb['keep_alive_session'] = dfb['keep_alive_session'].astype('category')
 dfb.drop(columns=['device_fraud_count'], inplace=True)
 y = dfb['fraud_bool']
-ds=dfb
+ds=dfb.copy()
 ds.drop(columns=['fraud_bool'],inplace=True)
 categorical_columns = dfb.select_dtypes(include=['object', 'category']).columns
 numerical_columns = ds.select_dtypes(include=['number']).columns
@@ -153,7 +161,7 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 from imblearn.over_sampling import SMOTE
 
 # Load and preprocess the dataset
-dfm = df
+dfm = df.copy()
 # Convert specific columns to categorical
 dfm['email_is_free'] = dfm['email_is_free'].astype('category')
 dfm['phone_home_valid'] = dfm['phone_home_valid'].astype('category')
@@ -231,6 +239,220 @@ print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 ###MLP#################################################
+###K_MEANS#################################################
 
+
+df.fillna(0, inplace=True)
+
+colonnes_avec_nan = df.columns[df.isna().any()].tolist()
+
+print("Colonnes contenant des valeurs NaN :", colonnes_avec_nan)
+
+print(df.columns)
+
+Y = df['fraud_bool']
+
+X = df.drop(columns=['fraud_bool'], inplace=True)
+df.head()
+
+dfb = df
+dfb['email_is_free'] = dfb['email_is_free'].astype('category')
+dfb['phone_home_valid'] = dfb['phone_home_valid'].astype('category')
+dfb['phone_mobile_valid'] = dfb['phone_mobile_valid'].astype('category')
+dfb['has_other_cards'] = dfb['has_other_cards'].astype('category')
+dfb['foreign_request'] = dfb['foreign_request'].astype('category')
+dfb['keep_alive_session'] = dfb['keep_alive_session'].astype('category')
+
+categorical_columns = dfb.select_dtypes(include=['object', 'category']).columns
+numerical_columns = dfb.select_dtypes(include=['number']).columns
+dfb.drop(columns=['device_fraud_count'], inplace=True)
+numerical_columns = dfb.select_dtypes(include=['number']).columns
+
+dfb_encoded = pd.get_dummies(dfb, categorical_columns)
+
+dfb_encoded.head(10)
+
+dfb_encoded.dtypes
+
+scaler = StandardScaler()
+dfb_scaled = scaler.fit_transform(dfb_encoded)
+
+# Appliquer K-means avec un nombre K de clusters
+num_clusters = 2
+kmeans = KMeans(n_clusters=num_clusters, init='k-means++', max_iter=300, n_init=10, random_state=0)
+kmeans.fit(dfb_scaled)
+
+
+# Obtenir les centres des clusters et les étiquettes
+centers = kmeans.cluster_centers_
+labels = kmeans.labels_
+inertie = kmeans.inertia_
+
+print(centers)
+print(labels)
+print(inertie)
+
+dfb_encoded['cluster'] = labels
+# Ajouter les etiquettes au jeu de données
+for i in range(5):  # Assurez-vous que la taille correspond
+    print(dfb_encoded.iloc[i], dfb_scaled[i], Y[i], dfb_encoded['cluster'].iloc[i])
+
+# Calculer le nombre d'éléments dans chaque cluster
+unique_labels, counts = np.unique(labels, return_counts=True)
+
+# Afficher le nombre d'éléments dans chaque cluster
+for cluster, count in zip(unique_labels, counts):
+    print(f"Cluster {cluster}: {count} éléments")
+
+from sklearn.metrics import accuracy_score, recall_score
+
+label_mapping = {}
+for cluster in range(num_clusters):
+    # Obtenez les indices des points dans le cluster actuel
+    cluster_indices = np.where(labels == cluster)[0]
+
+    # Obtenez les étiquettes réelles correspondantes à ces indices
+    true_labels_in_cluster = Y.iloc[cluster_indices].values
+
+    # Trouvez l'étiquette réelle la plus fréquente dans le cluster
+    most_common_label = np.argmax(np.bincount(true_labels_in_cluster))
+
+    # Associez le numéro du cluster à l'étiquette réelle la plus fréquente
+    label_mapping[cluster] = most_common_label
+
+# Appliquez la correspondance au tableau des étiquettes de cluster pour obtenir les étiquettes prédites
+predicted_labels = np.vectorize(label_mapping.get)(labels)
+
+# Calculer l'accuracy
+accuracy = accuracy_score(Y, predicted_labels)
+
+# Afficher le résultat
+print(f'Accuracy : {accuracy}')
+
+# Calculer le recall (rappel)
+recall = recall_score(Y, predicted_labels, average='macro')  # 'macro' pour moyenner sur toutes les classes
+
+# Afficher les résultats
+print(f'Accuracy : {accuracy}')
+print(f'Recall : {recall}')
+
+for i in range(4):
+    print (dfb_encoded.iloc[i], Y[i], predicted_labels[i])
+
+
+Y = pd.DataFrame(Y, columns=['fraud_bool'])
+
+r = pd.concat([dfb_encoded, Y], axis=0, ignore_index=True)
+
+from sklearn.decomposition import PCA
+
+# Utiliser l'analyse en composantes principales (PCA) pour visualiser les clusters dans un espace bidimensionnel
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(dfb_scaled)
+
+#grille pour deux graphiques placés côte-à-côte
+gs = gridspec.GridSpec(1, 2)
+
+#Premier graphique des clusters originals
+ax = plt.subplot(gs[0,0])
+ax.scatter(X_pca[:, 0], X_pca[:, 1], c=Y, cmap='viridis', edgecolors='k', s=20)
+ax.set_title('Clusters Originals')
+plt.xlabel('Première composante principale')
+plt.ylabel('Deuxième composante principale')
+
+#Second graphique des clusters identifiés par K-means
+ax = plt.subplot(gs[0,1])
+ax.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap='viridis', edgecolors='k', s=20)
+ax.set_title('Clusters identifiés par K-Means')
+plt.xlabel('Première composante principale')
+plt.ylabel('Deuxième composante principale')
+
+plt.show()
+
+# Utiliser la méthode du coude pour trouver le nombre optimal de clusters (k)
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    kmeans.fit(dfb_encoded)
+    wcss.append(kmeans.inertia_)
+
+
+# Tracer le coude (Elbow) pour déterminer k
+plt.plot(range(1, 11), wcss, marker='o')
+plt.title('Méthode du coude pour trouver le nombre optimal de clusters')
+plt.xlabel('Nombre de clusters')
+plt.ylabel('WCSS (Somme des carrés intra-cluster)')
+plt.show()
+
+for i in range(2, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    cluster_labels = kmeans.fit_predict(dfb_scaled)
+    silhouette_avg = silhouette_score(dfb_scaled, cluster_labels)
+    print(f"Silhouette Score pour nombre de clusters {i} : {silhouette_avg}")
+
+for i in range(2, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    cluster_labels = kmeans.fit_predict(dfb_scaled)
+    db_score = davies_bouldin_score(dfb_scaled, cluster_labels)
+    print(f"Coefficient de Davies-Bouldin pour nombre de clusters {i} : {db_score}")
+###KMEANS################################
+###SVM################################
+
+ds = df.copy()
+ds.fillna(0, inplace=True)
+
+colonnes_avec_nan = ds.columns[ds.isna().any()].tolist()
+
+print("Colonnes contenant des valeurs NaN :", colonnes_avec_nan)
+
+ds = ds.apply(pd.to_numeric, errors='coerce')
+
+X = ds.drop('fraud_bool', axis=1)  # Variables indépendantes
+y = ds['fraud_bool']  # Cible
+
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X, y)
+
+X = X_resampled
+y = y_resampled
+
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+from sklearn.model_selection import GridSearchCV
+
+# Définir les paramètres à tester
+param_grid = {
+    'C': [1, 10],       # Valeurs possibles pour C
+    'gamma': ['auto']  # Valeurs possibles pour gamma
+}
+
+classifierSVMrbf = SVC(kernel='rbf')
+
+# Appliquer GridSearchCV pour trouver les meilleurs paramètres
+grid_search = GridSearchCV(estimator=classifierSVMrbf, param_grid=param_grid, cv=2, n_jobs=-1, verbose=1)
+
+grid_search.fit(X_train, y_train)
+
+print("\nFinal Test Set Performance:")
+y_pred = grid_search.best_estimator_.predict(X_test)
+print(f"Accuracy: {accuracy_score(y_test, y_pred):.2f}")
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# Génération de la matrice de confusion
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+# Affichage de la matrice de confusion
+disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=['Non-Fraud', 'Fraud'])
+disp.plot(cmap='Blues')
+disp.ax_.set_title("Matrice de confusion SVM")
+plt.show()
 
 
