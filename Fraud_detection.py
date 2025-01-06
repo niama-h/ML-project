@@ -461,3 +461,68 @@ disp.ax_.set_title("Matrice de confusion SVM")
 plt.show()
 
 
+
+# algo KNN
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import SMOTE
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Chargement du dataset
+file_path = r'Base.csv'
+df = pd.read_csv(file_path)
+
+# Suppression des colonnes catégorielles
+categorical_columns = ['payment_type', 'employment_status', 'housing_status', 'source', 'device_os']
+df = df.drop(columns=categorical_columns)
+
+# Suppression des lignes avec des valeurs manquantes
+df = df.dropna()
+
+# Séparation des caractéristiques (X) et de la cible (y)
+X = df.drop(columns=['fraud_bool'])
+y = df['fraud_bool']
+
+# Division des données en ensembles d'entraînement et de test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+
+# Suréchantillonnage avec SMOTE pour équilibrer les classes
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+
+# Normalisation des données
+scaler = StandardScaler()
+X_train_resampled = scaler.fit_transform(X_train_resampled)
+X_test = scaler.transform(X_test)
+
+# Modèle KNN avec distance euclidienne
+knn = KNeighborsClassifier(n_neighbors=5, metric='euclidean')
+knn.fit(X_train_resampled, y_train_resampled)
+
+# Prédictions
+y_pred = knn.predict(X_test)
+
+# Évaluation
+print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Calcul de la matrice de confusion
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+# Affichage graphique de la matrice de confusion
+plt.figure(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt="d", cmap="Blues", xticklabels=["Non-Fraud", "Fraud"], yticklabels=["Non-Fraud", "Fraud"])
+plt.title("Matrice de Confusion pour KNN")
+plt.xlabel("Prédictions")
+plt.ylabel("Valeurs Réelles")
+plt.show()
