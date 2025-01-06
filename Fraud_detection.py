@@ -463,13 +463,8 @@ plt.show()
 
 
 ####################### algo KNN###########################
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
-from imblearn.over_sampling import SMOTE
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 # Chargement du dataset
 file_path = r'Base.csv'
@@ -512,10 +507,6 @@ print(confusion_matrix(y_test, y_pred))
 print("Classification Report:")
 print(classification_report(y_test, y_pred))
 
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 # Calcul de la matrice de confusion
 conf_matrix = confusion_matrix(y_test, y_pred)
 
@@ -530,11 +521,7 @@ plt.show()
 
 
 #######################clustering:dbscan########################
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Charger les données
 file_path = r'Base.csv'
